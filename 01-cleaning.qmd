@@ -1,0 +1,22 @@
+---
+title: "Cleaning"
+format: html
+---
+
+## Goals of this notebook
+
+1. 
+
+## Setup
+
+Loading the libraries.
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(janitor)
+library(readxl)
+```
