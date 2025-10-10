@@ -1,21 +1,22 @@
 project:
   type: website
+  render:
+  - "!01.1-geocoding.qmd"
+  - "01*.qmd"
+  - "*.qmd"
 
 website:
-  title: "houston-unhoused"
-  navbar:
-    left:
+  title: "Short site name"
+  sidebar:
+    contents:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - auto: "*.qmd"
 
 format:
   html:
-    theme:
-      - cosmo
-      - brand
+    theme: cosmo
     css: styles.css
     toc: true
-
-
-
+    df-print: paged
+    code-overflow: wrap
