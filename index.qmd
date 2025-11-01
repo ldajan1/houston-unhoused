@@ -5,11 +5,9 @@ title: "houston-unhoused"
 This project is a project for the Media Innovation Group at the University of Texas at Austin in collaboration with Houston Public Media. 
 
 Analysis data takeaways:
-- The year with the highest number of citations is 2016 with 5796, followed by 2020 with 5019. The year with the lowest number of citations is 2018, at 1385.
-- The month with the highest citation number since 2016 is Jan. 2021, with 797 citations. The month with the highest citation number since June 2023 is Feb. 2024 with 294 citations, closely followed by Jun. 2024 with 280 citations.
-- The month with the lowest citation number since 2016 is The month with the lowest citation number since June 2023 is July 2023, with 66 citations. This is followed by June 2023 with 85.
-- Considering every month from 2016 to 2024, the month with the highest average monthly citations is January. The month with the lowest is November.
-- The most common citation since 2016 is CC940 with 14865 offenses, with CC941 as a runner-up at 13478 offenses. The next most common is CC291 with only 470 offenses.
-- All five of the CC753 citations, all 32 of CC942 citations, both of the two CC943 citations and all 72 of CC948 citations have been given in 2025.
+
+
 
 Graph and chart data takeaways:
+
+

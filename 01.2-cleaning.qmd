@@ -5,8 +5,12 @@ format: html
 
 ## Goals for this notebook
 1. Evaluate data cleanliness
-2. Select columns
-3. Export clean data
+2. Group by dates
+3. Add amount fined column
+4. Remove repeated columns
+5. Select columns
+6. Check for data date gaps
+7. Export clean data
 
 ## Setup
 
@@ -31,7 +35,7 @@ unhoused_geocoded <- read_rds("data-processed/unhoused-geocoded.rds")
 ## 1.Evaluating data cleanliness
 
 ```{r}
-unhoused_geocoded |> glimpse()
+unhoused_geocoded
 ```
 
 ### 1.1 Fixing dates
@@ -58,26 +62,39 @@ unhoused_dates <- unhoused_dates |>
     jud_mo = month(judgment_date),
     jud_mo_label = month(judgment_date, label = TRUE),
     jud_yday = yday(judgment_date)
-  ) |> 
+  ) 
   
-glimpse()
+unhoused_dates |> glimpse()
 ```
 
-## 3. Selecting columns
+## 3. Adding amount fined column
 
 ```{r}
-unhoused_clean <- unhoused_dates |> 
+unhoused_fined <- unhoused_dates |>
+  mutate(amount_fined = total_fine_amount_due +
+                          total_fine_amount_paid +
+                          total_fine_amount_dismissed)
+
+unhoused_fined |> glimpse()
+```
+
+## 4. Selecting columns
+
+```{r}
+unhoused_clean <- unhoused_fined |> 
   select(citation_number, 
          case_number,
          defendant_name,
          violation_code,
          violation_description,
-         total_fine_amount_due,
-         total_fine_amount_paid,
-         total_fine_amount_dismissed,
+         fines_due = total_fine_amount_due,
+         fines_paid = total_fine_amount_paid,
+         fines_dismissed = total_fine_amount_dismissed,
+         amount_fined,
          offense_date,
          judgment_date,
-         judgement_disposition,
+         judgment,
+         disposition,
          full_address,
          latitude,
          longitude,
@@ -94,7 +111,35 @@ unhoused_clean <- unhoused_dates |>
 unhoused_clean |> glimpse()
 ```
 
-## Exporting
+## 5. Checking for data gaps
+
+### 5.1 Making a date ranges object
+
+Preparing the data
+
+```{r}
+unhoused_date_range <- unhoused_clean |> 
+  select(offense_date) |> 
+  arrange(offense_date)
+
+unhoused_date_range |> glimpse()
+```
+
+### 5.2 Plotting
+
+```{r}
+ggplot(unhoused_date_range, 
+       aes(x = offense_date, y = 1)) +
+  geom_point() +
+  labs(
+    title = "All Citations by Offense Date",
+    x = "Offense Date",
+    y = ""
+  ) +
+  theme_minimal()
+```
+
+## 6. Exporting
 
 ```{r}
 unhoused_clean |> 

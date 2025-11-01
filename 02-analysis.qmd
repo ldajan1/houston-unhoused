@@ -17,13 +17,26 @@ format: html
     iii) What is the month with the most guilty dispositions percentage?
     iv) What is the average percentage of guilty dispositions for each month since 2016?
 4. People Analysis
-    i) Who has received multiple citations/fines? 
+    i) How many people received multiple citations/fines? Who has received the most?
+    ii) Individual fine statistics
         A. Who are the most heavily fined people?
-    ii) Who has served jail time?
-    iii) How many people still owe fines to the city?
-    iv) How many people have paid their fines?
-    v) How many people have had their fines dismissed? 
-        A. How many of these people have been fined multiple times?
+        B. Who are the most heavily fined people? 
+        C. How much of those fines got dismissed? 
+        D. How much did they pay? 
+        E. How much do they still have due? 
+        F. Who has paid the highest amount of dues?
+    iii) General fine statistics
+        A. How many people still owe fines to the city?
+        B. How many people have paid their fines?
+        C. How many people have had their fines dismissed?
+    iv) Who has served jail time?
+5. Dismissal impacts
+    i) Do dismissal rates change over time
+    ii) How many people with multiple citations also had their fines dismissed?
+    iii) Does time between citation date and judgment date impact dismissal?
+6. Other
+    i) How many individual people are there
+    ii) Do people who receive time also receive fines?
 
 ## Set up
 ```{r}
@@ -38,9 +51,8 @@ library(janitor)
 ## Importing
 
 ```{r}
-unhoused <- read_rds("data-processed/unhoused-clean.rds") # ask dominic if there's outside houston data in this set
-
-unhoused %>% glimpse()
+unhoused <- read_rds("data-processed/unhoused-clean.rds")
+unhoused |> glimpse()
 ```
 
 ## 1. Citation numbers over time
@@ -51,15 +63,15 @@ What is the year with the most citations?
 
 ```{r}
 unhoused |>
-  filter(off_yr < 2025) |> #
+  filter(off_yr < 2025) |> 
   group_by(year(offense_date)) |> 
   summarize(yearly_offenses = n()) |> 
-  arrange() 
+  arrange((yearly_offenses)) 
 ```
 
 #### 1.1.1 Data takeaways
 
-The year with the highest number of citations is 2016 with 5796, followed by 2020 with 5019. The year with the lowest number of citations is 2018, at 1385.	
+* The year with the highest number of citations is 2016 with 5800, followed by 2020 with 5011. The year with the lowest number of citations is 2018, at 1385.	
 
 ### 1.2 Highest citation month
 
@@ -67,7 +79,7 @@ What's the month with the most citations from 2016 to 2024?
 
 ```{r}
 unhoused |> 
-  #filter(offense_date >= "2023-06-01") |> # i'm looking 6 months before Whitmire's term started to see if there is an uptick in citations after Jan. 2024.
+  #filter(offense_date >= "2023-07-01") |> # i'm looking 6 months before Whitmire's term started to see if there is an uptick in citations after Jan. 2024.
   group_by(off_yr,
            off_mo_label) |> 
   summarise(
@@ -77,13 +89,12 @@ unhoused |>
 
 #### 1.2.1 Data takeaways
 
-The month with the highest citation number since 2016 is Jan. 2021, with 797 citations. The month with the highest citation number since June 2023 is Feb. 2024 with 294 citations, closely followed by Jun. 2024 with 280 citations.
-
-The month with the lowest citation number since 2016 is The month with the lowest citation number since June 2023 is July 2023, with 66 citations. This is followed by June 2023 with 85.
+* The month with the highest citation number since 2016 is Jan. 2021, with 797 citations. The month with the highest citation number since July 2023 is Feb. 2024 with 294 citations, closely followed by Jun. 2024 with 280 citations.
+* The month with the lowest citation number since 2016 is March 2022 with 29 citations. The month with the lowest citation number since July 2023 is July 2023, with 66 citations. This is followed by May 2023 with 87 citations.
 
 ### 1.3 Avg monthly citation
 
-What is the average monthly citation for each month from 2016 to 2024?
+What is the average monthly citation count for each month from 2016 to 2024?
 
 ```{r}
 unhoused |> 
@@ -91,16 +102,15 @@ unhoused |>
   group_by(off_yr,
            off_mo_label) |> 
   summarise(
-    yr_mo_off = sum(n())
+    yr_mo_off = n()
   ) |> 
   group_by(off_mo_label) |> 
-  summarise(avg_mo_off = mean(yr_mo_off) %>% 
-            round(1))
+  summarise(avg_mo_off = round(mean(yr_mo_off), 1))
 ```
 
 #### 1.3.1 Data takeaways
 
-Considering every month from 2016 to 2024, the month with the highest average monthly citations is January. The month with the lowest is November.
+* Considering every month from 2016 to 2024, the month with the highest average monthly citation count is January, with about 326 average monthly offenses, followed by May with about 308. The month with the lowest is November, with about 192 average monthly offenses, followed by December with about 201.
 
 ## 2. Citation types
 
@@ -119,22 +129,24 @@ unhoused |>
 
 There are seven types of violations that have been given since 2016. Here is what they mean and their frequency:
 
-1. **CC921 has 470 citations**
-    i) Sidewalk obstruction: OBSTRUCT SIDEWALK BY (PLACING/DEPOSITING/PERMIT PERSON UNDER CONTROL) OBJECT (BOX/MAT./VEH./ETC.)
-2. **CC940 has 14865 citations**
-    i) Sidewalk obstruction: SIT/LIE DOWN ON (BLANKET/STOOL) PLACED ON SIDEWALK B/W 7:00 AM AND 11:00 PM IN A PROHIBITED AREA
-3. **CC941 has 13478 citations**
-    i) Sidewalk obstruction: PLACE (BED MAT./PERSONAL POSS.) ON SIDEWALK B/W THE HRS OF 7:00 A.M. & 11:00P.M. IN A PROHIBITED AREA
-4. **CC942 has 32 citations**
-    i) 	Sidewalk obstruction: IMPAIR OR OBSTRUCT SIDEWALK WITHOUT A PERMIT
-5. **CC943 has 2 citations**
-    i) Sidewalk obstruction: IMPAIR OR OBSTRUCT SIDEWALK BEYOND SCOPE OF PERMIT
-6. **CC948 has 72 citations**
-    i) Sidewalk obstruction: PLACE OR ALLOW OBSTRUCTION ON SIDEWALK
-7. **CC753 has 5 citations**
+1. **CC753 has 5 citations**
     i) Selling goods in public area: STREET VENDOR (EXPOSE FOR SALE) (SELL) GOODS, TO-WIT:...ON A PUBLIC (SIDEWALK) (STREET) (PROPERTY)
+2. **CC921 has 470 citations**
+    i) Sidewalk obstruction: OBSTRUCT SIDEWALK BY (PLACING/DEPOSITING/PERMIT PERSON UNDER CONTROL) OBJECT (BOX/MAT./VEH./ETC.)
+3. **CC940 has 14880 citations**
+    i) Sidewalk obstruction: SIT/LIE DOWN ON (BLANKET/STOOL) PLACED ON SIDEWALK B/W 7:00 AM AND 11:00 PM IN A PROHIBITED AREA
+4. **CC941 has 13477 citations**
+    i) Sidewalk obstruction: PLACE (BED MAT./PERSONAL POSS.) ON SIDEWALK B/W THE HRS OF 7:00 A.M. & 11:00P.M. IN A PROHIBITED AREA
+5. **CC942 has 32 citations**
+    i) 	Sidewalk obstruction: IMPAIR OR OBSTRUCT SIDEWALK WITHOUT A PERMIT
+6. **CC943 has 2 citations**
+    i) Sidewalk obstruction: IMPAIR OR OBSTRUCT SIDEWALK BEYOND SCOPE OF PERMIT
+7. **CC948 has 72 citations**
+    i) Sidewalk obstruction: PLACE OR ALLOW OBSTRUCTION ON SIDEWALK
   
-The most common citation since 2016 is CC940 with 14865 offenses, with CC941 as a runner-up at 13478 offenses. The next most common is CC291 with only 470 offenses.
+The most common citation since 2016 is CC940 with 14,880 offenses, with CC941 as a runner-up at 13,477 offenses. The next most common is CC291 with only 470 offenses.
+
+@ NOTE: which ones of these do we want to classify as civility ordinances? All the ones with specific times?
 
 ### 2.2 Most common by year
 
@@ -150,16 +162,303 @@ unhoused |>
 
 All five of the CC753 citations, all 32 of CC942 citations, both of the two CC943 citations and all 72 of CC948 citations have been given in 2025.
 
-## 3. Judgment dispositions
+## 3. Judgment and dispositions
 
+### 3.1 Most popular judgment
 
+What is the most common judgement?
 
+```{r}
+unhoused |> 
+  group_by(judgment) |> 
+  summarise(judgment_count = n()) |> 
+  arrange(desc(judgment_count))
+```
 
+#### 3.1.1 Data takeaway
 
+* The most common judgment is "CASE DISMISSED - OFFICER NOT PRESENT" with 8,404 counts, followed by "CREDIT TIME SERVED" with 5,372 counts and "FAILURE TO APPEAR WARRANT (FTA)" with 4,986 counts.
 
+### 3.2 Most popular disposition
 
+What is the most common disposition?
 
+```{r}
+unhoused |> 
+  group_by(disposition) |> 
+  summarise(disposition_count = n()) |> 
+  arrange(desc(disposition_count))
+```
 
+#### 3.1.2 Data takeaway
+
+* The most common disposition type is "UNDISPOSED" with 13,733 counts, followed by "DISMISSED AT TRIAL" with 9,360 counts and "GUILTY TRIAL BY JUDGE" with 5,593 counts.
+
+## 4. Top people
+
+### 4.1 Most citations
+
+Who has received the most citations? 
+
+```{r}
+unhoused |> 
+  group_by(defendant_name) |> 
+  summarise(citation_count = n(),
+            first_citation = min(offense_date),
+            last_citation = max(offense_date),
+            ) |> 
+  arrange(desc(citation_count)) |> 
+  filter(citation_count >= 100)
+```
+
+#### 4.1.1 Data takeaways
+
+* There are 21 people who have received at least 100 total citations. 
+* The person with the most citations is Patricia Norris, who has received 782 total citations, all given between October 2017 and May 2025. 
+* The person with the second most citations is Rickey Garrett, who has received 289 total citations, all given between January 2020 and February 2024.
+
+### 4.2 Most fines and dues
+
+1. Who are the most heavily fined people? 
+    i) How much of those fines got dismissed? 
+    ii) How much did they pay? 
+    iii) How much do they still have due? 
+2. Who has paid the highest amount of dues?
+
+```{r}
+individual_fines <- unhoused |>
+  group_by(defendant_name) |>
+  summarise(total_fined = sum(amount_fined, na.rm = TRUE),
+    total_fines_dismissed = sum(fines_dismissed, na.rm = TRUE),
+    total_fines_paid = sum(fines_paid, na.rm = TRUE),
+    total_fines_due = sum(fines_due, na.rm = TRUE)
+  )
+
+individual_fines |>
+  arrange(desc(total_fines_paid))
+```
+
+#### 4.2.1 Data takeaways
+
+* Patricia Norris has been charged the highest total fines at around \$196,100. She hasn't paid any of her fines, but has had about \$146,200 dismissed, which leaves almost \$50,000 that she still owes. 
+* Rickey Garrett is the second most fined person, with around \$73,000 total fines. He has also never paid any of his fines, but has had all of them dismissed.
+* Bobby Anderson is the person who has paid the highest amount of fines. He's paid roughly \$24,900 out of around his total \$33,800. Roughly \$6,400 of that total has been dismissed, but he still owes about \$ 2,500.
+
+## 5. Fines
+
+1. How many distinct people are there with citations?
+2. How many people still owe fines to the city? How much is the city owed in total?
+3. How many people have paid some/all of their fines?
+4. How many people have had some/all of their fines dismissed?
+
+### 5.1 People with citations
+
+How many distinct people are there who were fined?
+
+```{r}
+individual_fines |> 
+  filter(total_fined > 0) |> 
+  summarise(n())
+```
+
+### 5.2 Owed fines
+
+How many people still owe fines to the city? How much is the city owed in total?
+
+```{r}
+individual_fines |> 
+  filter(total_fines_due > 0) |> 
+  summarise(people_owing_fines = n(),
+            owed_fines_total = sum(total_fines_due)
+            )
+```
+
+### 5.3 Fines paid
+
+How many people have paid some/all of their fines?
+
+```{r}
+individual_fines |> 
+  filter(total_fines_paid > 0) |> 
+  summarise(people_paid_fines = n(),
+            paid_fines_total = sum(total_fines_paid)
+            )
+```
+
+### 5.4 Fines dismissed
+
+How many people have had some/all of their fines dismissed?
+
+```{r}
+individual_fines |> 
+  filter(total_fines_dismissed > 0,
+         total_fines_dismissed == total_fined) |> 
+  summarise(individual_fines_dismissed = n()
+            )
+```
+
+### 5.5 Data takeaways
+
+1. There are 6016 distinct people who have received a fine with their citation since 2016.
+2. Of the 6016 distinct people who have received a fine with their citation, 3351 of them still owe fines. The sum of total fines still owed to the city is about \$2,800,000.
+3. Of the 6016 distinct people who have received a fine with their citation, 1653 of them have paid at least some of their fines. 1,039 of those people have paid off all their fines without any help from dismissals. The total amount of fines paid since 2016 is about \$1,500,000.
+4. Of the 6016 distinct people who have received a fine with their citation, 2099 people have had at least some of their fines dismissed, and 1324 people had all of their fines dismissed.
+
+## 6. Jail time
+
+### 6.1 All jail judgments
+
+How many jail judgments have been given?
+
+```{r}
+unhoused_jail <- unhoused |> 
+  mutate(judgment = str_to_upper(str_trim(judgment)),
+         defendant_name = str_to_upper(str_trim(defendant_name))#,
+         #defendant_name = word(defendant_name, 1, 2) # @ sometimes there are middle names, causing each person to have two different rows, skewing the data. there's also an issue with name spelling variations, but idk how to counteract that since it's a ultimately only a guess whether it's a misspelling or a different person
+         ) |> 
+  filter(judgment == "CREDIT TIME SERVED")
+
+unhoused_jail |> glimpse()
+```
+
+#### 6.1.1 Data takeaway
+
+* A total of 5,372 jail judgments have been given, many of these were given to the same people. Some judgments were even given on the same judgment date to the same person for citations that were given throughout preceding dates.
+
+### 6.2 Jailed people
+
+How many individual people have been jailed? How many have been jailed more than once?
+
+```{r}
+unhoused_jail |> 
+  distinct(defendant_name, judgment_date) |> 
+  group_by(defendant_name) |> 
+  summarise(times_served = n()) |> 
+  # filter(times_served > 1) |> 
+  arrange(desc(times_served))
+```
+
+#### 6.2.1 Data takeaway
+
+* Of the ___ people who have received a citation since 2016, 1,474 of them have been jailed at least once. Of those who have been jailed, 208 people have been jailed more than once. 
+* The person with the highest jail count is Kevin Shakesnider, who has been jailed 21 individual times, but has received 92 offenses for which he served time (several were served under the same judgment date).
+* The person with the second highest jail count is Michael Burks at 12 counts.
+
+@ Kevin Shakesnider has different variations of the same spelling, and one entry has a middle name, so it counts it as a different person.
+
+## 7. Individual people analysis
+
+### 7.1. Kevin Shakesnider
+
+#### 7.1.1 Highest jail citations
+
+When did Kevin Shakesnider receive the highest jail citations in one judgment? What is the overall date range?
+
+```{r}
+unhoused_jail |> 
+  filter(defendant_name == "SHAKESNIDER, KEVIN") |>
+  group_by(judgment_date, violation_code) |>
+ summarise(jail_count = n())
+```
+
+##### 7.1.1.1 Data takeaways
+
+All 21 of his judgment dates fall between Jan. 1 and Dec. 22 2016. On June 23, he received a "TIME SERVED" judgment for 16 citations, his highest in one single day.
+
+@ note: I see that there is also a Kevin P. Shakesnider with 30 more jailings, that sounds like the same guy but with an added middle initial. There are also Kevins with various spellings of the same last name. I know how to fix the middle name issue, but not sure how to approach misspellings.
+
+#### 7.1.2 Plotting
+
+Plotting citations and violation type.
+
+##### 7.1.2.1 Preparing object
+
+```{r}
+shakesnider_jailed <- unhoused_jail |> 
+  filter(defendant_name == "SHAKESNIDER, KEVIN") |>
+  group_by(judgment_date, violation_code) |>
+ summarise(jail_count = n())
+
+shakesnider_jailed
+```
+
+##### 7.1.2.2 Plotting
+
+```{r}
+ggplot(shakesnider_jailed, 
+       aes(x = judgment_date, y = jail_times, fill = violation_code)) +
+  geom_col(position = "stack") +
+  labs(
+    title = "Kevin Shakesnider's Jail Judgments Over Time",
+    x = "Judgment Date",
+    y = "Number of Citations",
+    fill = "Violation Code"
+  ) +
+  theme_minimal()
+```
+
+###### 7.1.2.2.1 Data Takeaway
+
+@ NOTE: It doesn't sit right with me that the lines are so thin, but I can't think of a better way to visualize this.
+
+### 7.2 Patricia Norris
+
+#### 7.2.1 Highest citation count
+
+Making Norris object.
+
+```{r}
+norris <- unhoused |> 
+  filter(defendant_name == "NORRIS, PATRICIA")
+
+norris
+```
+
+#### 7.2.2 Plotting
+
+##### 7.2.2.1 Preparing to plot
+
+Checking for what kinds of violation codes Norris has been given.
+
+```{r}
+norris |> 
+  distinct(violation_code)
+```
+
+Making the object.
+
+```{r}
+norris_citations <- norris |> 
+  group_by(offense_date) |> 
+  summarise(citation_count = n()) |>
+  arrange(offense_date)
+
+norris_citations
+```
+
+##### 7.2.2.1 Plotting.
+
+```{r}
+ggplot(norris_citations, 
+       aes(x = offense_date, y = citation_count)) +
+  geom_point(alpha = 1 / 3) +
+  labs(
+    title = "Patricia Norris Citation Count by Offense Date",
+    x = "Offense Date",
+    y = "Citation Count"
+  ) +
+  theme_minimal()
+```
+
+###### 7.2.2.1.1 Data takeaway
+
+Each one of these points is a day, so the higher the citation count, the more citations she received in a single day. Almost every time Patricia Norris has been given a citation, she has also been given at least one other citation. She was also hit with citations almost consistently from 2020 to present. There have been some gaps between those dates, I wonder what those dates are.
+
+I'd also like to color code these points. A color for one each violation type, then another if she was hit with more than one violation type in a single day.
+
+### 7.3 Bobby Anderson
+
+### 7.4 Rickey Garrett
 
 
 
