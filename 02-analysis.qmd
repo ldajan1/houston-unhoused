@@ -11,7 +11,7 @@ format: html
 2. Investigate most common citation types
     i) What are the most common citation types of all time?
     ii) What are the most common citation types by year?
-3. Judgement dispositions
+3. Judgement and dispositions
     i) What is the most common judgement disposition?
    ii) How many guilty cases per year?
     iii) What is the month with the most guilty dispositions percentage?
@@ -29,7 +29,6 @@ format: html
         A. How many people still owe fines to the city?
         B. How many people have paid their fines?
         C. How many people have had their fines dismissed?
-    iv) Who has served jail time?
 5. Dismissal impacts
     i) Do dismissal rates change over time
     ii) How many people with multiple citations also had their fines dismissed?
@@ -46,6 +45,9 @@ format: html
 
 library(tidyverse)
 library(janitor)
+library(sf)
+library(mapview)
+library(ggspatial)
 ```
 
 ## Importing
@@ -62,7 +64,7 @@ unhoused |> glimpse()
 What is the year with the most citations?
 
 ```{r}
-unhoused |>
+unhoused |> # @ fix date grouping
   filter(off_yr < 2025) |> 
   group_by(year(offense_date)) |> 
   summarize(yearly_offenses = n()) |> 
@@ -79,12 +81,12 @@ What's the month with the most citations from 2016 to 2024?
 
 ```{r}
 unhoused |> 
-  #filter(offense_date >= "2023-07-01") |> # i'm looking 6 months before Whitmire's term started to see if there is an uptick in citations after Jan. 2024.
-  group_by(off_yr,
+  filter(offense_date >= "2023-07-01") |> # i'm looking 6 months before Whitmire's term started to see if there is an uptick in citations after Jan. 2024.
+  group_by(off_yr,# @ create flag for before/after whitmire term so i can group by before/after more easily. add graph by color
            off_mo_label) |> 
   summarise(
     yr_mo_off = sum(n())) |> 
-  arrange(yr_mo_off)
+  arrange(desc(yr_mo_off))
 ```
 
 #### 1.2.1 Data takeaways
@@ -129,24 +131,25 @@ unhoused |>
 
 There are seven types of violations that have been given since 2016. Here is what they mean and their frequency:
 
-1. **CC753 has 5 citations**
+1. **CC753 has 5 citations** Street vendor (separate)
     i) Selling goods in public area: STREET VENDOR (EXPOSE FOR SALE) (SELL) GOODS, TO-WIT:...ON A PUBLIC (SIDEWALK) (STREET) (PROPERTY)
-2. **CC921 has 470 citations**
+2. **CC921 has 470 citations** Sidewalk
     i) Sidewalk obstruction: OBSTRUCT SIDEWALK BY (PLACING/DEPOSITING/PERMIT PERSON UNDER CONTROL) OBJECT (BOX/MAT./VEH./ETC.)
-3. **CC940 has 14880 citations**
+3. **CC940 has 14880 citations** Civility
     i) Sidewalk obstruction: SIT/LIE DOWN ON (BLANKET/STOOL) PLACED ON SIDEWALK B/W 7:00 AM AND 11:00 PM IN A PROHIBITED AREA
-4. **CC941 has 13477 citations**
+4. **CC941 has 13477 citations** Civility
     i) Sidewalk obstruction: PLACE (BED MAT./PERSONAL POSS.) ON SIDEWALK B/W THE HRS OF 7:00 A.M. & 11:00P.M. IN A PROHIBITED AREA
-5. **CC942 has 32 citations**
+5. **CC942 has 32 citations** Sidewalk
     i) 	Sidewalk obstruction: IMPAIR OR OBSTRUCT SIDEWALK WITHOUT A PERMIT
-6. **CC943 has 2 citations**
+6. **CC943 has 2 citations** Sidewalk
     i) Sidewalk obstruction: IMPAIR OR OBSTRUCT SIDEWALK BEYOND SCOPE OF PERMIT
-7. **CC948 has 72 citations**
+7. **CC948 has 72 citations** Sidewalk
     i) Sidewalk obstruction: PLACE OR ALLOW OBSTRUCTION ON SIDEWALK
+    **CC956** Separate
   
 The most common citation since 2016 is CC940 with 14,880 offenses, with CC941 as a runner-up at 13,477 offenses. The next most common is CC291 with only 470 offenses.
 
-@ NOTE: which ones of these do we want to classify as civility ordinances? All the ones with specific times?
+@ NOTE: which ones of these do we want to classify as civility ordinances? All the ones with specific times? ask dominic then make flags/categories
 
 ### 2.2 Most common by year
 
@@ -172,7 +175,7 @@ What is the most common judgement?
 unhoused |> 
   group_by(judgment) |> 
   summarise(judgment_count = n()) |> 
-  arrange(desc(judgment_count))
+  arrange(desc(judgment_count)) # @make new column to standardize result variations
 ```
 
 #### 3.1.1 Data takeaway
@@ -311,12 +314,12 @@ individual_fines |>
 How many jail judgments have been given?
 
 ```{r}
-unhoused_jail <- unhoused |> 
+unhoused_jail <- unhoused |> # @ make a column rather than object then group_by
   mutate(judgment = str_to_upper(str_trim(judgment)),
-         defendant_name = str_to_upper(str_trim(defendant_name))#,
+         defendant_name = str_to_upper(str_trim(defendant_name))#, # @ do this in openrefine
          #defendant_name = word(defendant_name, 1, 2) # @ sometimes there are middle names, causing each person to have two different rows, skewing the data. there's also an issue with name spelling variations, but idk how to counteract that since it's a ultimately only a guess whether it's a misspelling or a different person
          ) |> 
-  filter(judgment == "CREDIT TIME SERVED")
+  filter(judgment == "CREDIT TIME SERVED") # @eliminates all other cases
 
 unhoused_jail |> glimpse()
 ```
@@ -332,7 +335,7 @@ How many individual people have been jailed? How many have been jailed more than
 ```{r}
 unhoused_jail |> 
   distinct(defendant_name, judgment_date) |> 
-  group_by(defendant_name) |> 
+  group_by(defendant_name) |> # @tool called open refine to create new column to find these instances very well and we make decision.
   summarise(times_served = n()) |> 
   # filter(times_served > 1) |> 
   arrange(desc(times_served))
@@ -355,7 +358,7 @@ unhoused_jail |>
 When did Kevin Shakesnider receive the highest jail citations in one judgment? What is the overall date range?
 
 ```{r}
-unhoused_jail |> 
+unhoused_jail |> # @ does dominic want to know people's path or the final thing?
   filter(defendant_name == "SHAKESNIDER, KEVIN") |>
   group_by(judgment_date, violation_code) |>
  summarise(jail_count = n())
@@ -386,7 +389,7 @@ shakesnider_jailed
 
 ```{r}
 ggplot(shakesnider_jailed, 
-       aes(x = judgment_date, y = jail_times, fill = violation_code)) +
+       aes(x = judgment_date, y = jail_count, fill = violation_code)) +
   geom_col(position = "stack") +
   labs(
     title = "Kevin Shakesnider's Jail Judgments Over Time",
@@ -460,11 +463,47 @@ I'd also like to color code these points. A color for one each violation type, t
 
 ### 7.4 Rickey Garrett
 
+## 8. Geocode mapping
 
+### 8.1 Missing addresses
 
+How many missing addresses are there?
 
+```{r}
+sum(is.na(unhoused$longitude))
+sum(is.na(unhoused$latitude))
+```
 
+### 8.2 Preparing to map all addresses
 
+Turning the addresses in a Simple Feature Collection
+
+```{r}
+unhoused_mapped <- unhoused |> 
+  filter(!is.na(geocodio_longitude) & !is.na(geocodio_latitude)) |>
+  st_as_sf(
+    coords = c("geocodio_longitude", "geocodio_latitude"),
+    crs = 4326
+  )
+
+unhoused_mapped
+```
+
+### 8.3 Mapping
+
+Plotting a map of every address. This only represents the number of distinct addresses, not citations.
+
+Method 1: mapview()
+
+```{r}
+unhoused_mapped |> mapview()
+```
+
+Method 2: ggplot
+
+```{r}
+
+```
 
 
 
