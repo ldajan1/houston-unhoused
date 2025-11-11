@@ -156,14 +156,14 @@ unhoused_selected |> glimpse()
 
 ## 5. @Duplicate rows
 
-### 1.1 Finding dupes
+### 5.1 Finding dupes
 
 ```{r}
 unhoused_selected |> 
    get_dupes(!data_origin)
 ```
 
-### 1.2 No dupes
+### 5.2 No dupes
 
 Getting rid of those duplicates.
 
@@ -182,7 +182,7 @@ unhoused_clean <- unhoused_selected |>
 unhoused_clean |> glimpse()
 ```
 
-### 1.3 Problem
+### 5.3 Problem
 
 Finding duplicate case numbers.
 
