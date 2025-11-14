@@ -148,7 +148,15 @@ unhoused_selected <- unhoused_fined |>
          geocodio_county,
          geocodio_postal_code,
          geocodio_country,
-         geocodio_source
+         geocodio_source,
+         off_yr,
+         off_mo,
+         off_mo_label,
+         off_yday,
+         jud_yr,
+         jud_mo,
+         jud_mo_label,
+         jud_yday
          )
 
 unhoused_selected |> glimpse()
@@ -168,16 +176,8 @@ unhoused_selected |>
 Getting rid of those duplicates.
 
 ```{r}
-# unhoused_clean <- unhoused_selected |> 
-#   distinct(across(!data_origin), .keep_all = TRUE) # this is originally how i had it to keep the data_origin column, but not consider it when looking for distinct rows
-# 
-# unhoused_clean |> glimpse()
-```
-
-```{r}
-unhoused_clean <- unhoused_selected |> 
-  select(!data_origin) |> 
-  distinct()
+unhoused_clean <- unhoused_selected |>
+  distinct(across(!data_origin), .keep_all = TRUE) # this is originally how i had it to keep the data_origin column, but not consider it when looking for distinct rows
 
 unhoused_clean |> glimpse()
 ```
@@ -187,7 +187,7 @@ unhoused_clean |> glimpse()
 Finding duplicate case numbers.
 
 ```{r}
-unhoused_dupes |> 
+unhoused_clean |> 
   get_dupes(case_number) |> #@ not all of these are problematic, some just have different judgment dates and that makes sense. but many only differ by defendant_address, and sometimes it's only a difference of a comma
 
   arrange(offense_date)

@@ -12,10 +12,11 @@ format: html
     i) What are the most common citation types of all time?
     ii) What are the most common citation types by year?
 3. Judgement and dispositions
-    i) What is the most common judgement disposition?
-   ii) How many guilty cases per year?
-    iii) What is the month with the most guilty dispositions percentage?
-    iv) What is the average percentage of guilty dispositions for each month since 2016?
+    i) What is the most common judgement?
+    ii) What is the most common disposition?
+    iii) How many guilty cases per year?
+    iv) What is the month with the most guilty dispositions percentage?
+    v) What is the average percentage of guilty dispositions for each month since 2016?
 4. People Analysis
     i) How many people received multiple citations/fines? Who has received the most?
     ii) Individual fine statistics
@@ -53,7 +54,7 @@ library(ggspatial)
 ## Importing
 
 ```{r}
-unhoused <- read_rds("data-processed/unhoused-clean.rds")
+unhoused <- read_csv("data-processed/unhoused-clean.csv")
 unhoused |> glimpse()
 ```
 
@@ -167,7 +168,7 @@ All five of the CC753 citations, all 32 of CC942 citations, both of the two CC94
 
 ## 3. Judgment and dispositions
 
-### 3.1 Most popular judgment
+### 3.1 Most common judgment
 
 What is the most common judgement?
 
@@ -182,7 +183,7 @@ unhoused |>
 
 * The most common judgment is "CASE DISMISSED - OFFICER NOT PRESENT" with 8,404 counts, followed by "CREDIT TIME SERVED" with 5,372 counts and "FAILURE TO APPEAR WARRANT (FTA)" with 4,986 counts.
 
-### 3.2 Most popular disposition
+### 3.2 Most common disposition
 
 What is the most common disposition?
 
@@ -193,9 +194,54 @@ unhoused |>
   arrange(desc(disposition_count))
 ```
 
-#### 3.1.2 Data takeaway
+#### 3.2.1 Data takeaway
 
 * The most common disposition type is "UNDISPOSED" with 13,733 counts, followed by "DISMISSED AT TRIAL" with 9,360 counts and "GUILTY TRIAL BY JUDGE" with 5,593 counts.
+
+### 3.3 Yearly guilty cases
+
+What is the year with the most guilty dispositions?
+
+```{r}
+unhoused |> 
+  filter(off_yr < 2025,
+         disposition == "GUILTY TRIAL BY JUDGE") |> 
+  group_by(off_yr) |> 
+  summarize(yearly_guilty = n()) |> 
+  arrange((yearly_guilty)) 
+```
+
+#### 3.3.1 Data takeaway
+
+* 2018 is the year with the lowest number of guilty dispositions at 50 dispositions.
+* 2016 is the year with the highest number of guilty dispositions at 1951 dispositions, followed by 2021 with 931.
+
+### 3.4 Highest guilty month
+
+Of all the individual months each year, what is the month with the most guilty dispositions percentage relative to all dispositions that month?
+
+Steps:
+
+What is monthly guilty count?
+What is total monthly disposition count?
+guilty/total * 100
+
+```{r}
+unhoused |> 
+  filter(judgment_date >= "2023-07-01") |> # i'm looking 6 months before Whitmire's term started to see if there is an uptick in citations after Jan. 2024. @ create flag for this
+  group_by(jud_yr,
+           jud_mo_label) |> 
+  summarise(guilty = n(disposition == "GUILTY TRIAL BY JUDGE")
+  # group_by(jud_yr,
+  #          jud_mo_label) |>
+  # summarise(guilty = n(disposition == "GUILTY TRIAL BY JUDGE"),
+  #           total = n())
+```
+
+#### 3.4.1 Data takeaway
+
+* Ever: The month with the guilty dispositions since 2016 is Aug. 2021, with 829 dispositions, followed by Apr. 2021 with 777. The month with the lowest guilty dispositions since 2016 is May 2020 with 5 dispositions.
+* Whitmire: The month with the highest guilty dispositions since July 2023 is May 2024 with 771 guilty dispositions, followed by Sep. 2025 with 704 citations. The month with the lowest guilty dispositions since July 2023 is Jul. 2023 with 104 dispositions, followed by Dec. 2024 with 136.
 
 ## 4. Top people
 
